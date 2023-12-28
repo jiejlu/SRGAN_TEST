@@ -41,9 +41,6 @@ if __name__ == '__main__':
     print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
 
     generator_criterion = GeneratorLoss()
-    # discriminator_criterion = BCELoss()
-    # real_label = torch.ones(1, dtype=torch.float32, requires_grad=False).mean().cuda()
-    # fake_label = torch.zeros(1, dtype=torch.float32, requires_grad=False).mean().cuda()
     initial_lr_rate = 1e-3  # 初始学习率设置为1e-3
     new_lr_rate = 1e-4  # 参数更新1e4次后修改学习率为1e-4
     num_iterations = 0
@@ -58,37 +55,7 @@ if __name__ == '__main__':
     optimizerD = optim.Adam(netD.parameters(), lr=initial_lr_rate)
 
     results = {'d_loss': [], 'g_loss': [], 'd_score': [], 'g_score': [], 'psnr': [], 'ssim': []}
-    """
-    #这一段尝试过优先训练判别器（1.初始生成器为0  2.初始生成器为训练好的较优模型），效果均不理想，猜测网络模型复杂度提高可能提升模型效果
-    netG.load_state_dict(torch.load('epochs/netG_epoch_4_10.pth'))
-
-    # 优先训练一个比较强的判别器
-    for epoch in range(5):
-        train_bar = tqdm(train_loader)
-        netG.eval()
-        netD.train()
-        for real_lr_data, _ in train_bar:
-            real_img = Variable(_)
-            if torch.cuda.is_available():
-                real_img = real_img.cuda()
-            z = Variable(real_lr_data)
-            if torch.cuda.is_available():
-                z = z.cuda()
-            fake_img = netG(z)
-            netD.zero_grad()
-            real_out = netD(real_img).mean()
-            fake_out = netD(fake_img.detach()).mean()
-            d_loss = 1 - real_out + fake_out  # 希望判别器将真实图像判为真，将假的图像判为假，以最小化d_loss为目标进行反向传播
-            d_loss.backward()
-            # 梯度裁剪
-            max_grad_norm = 1.0  # 设置裁剪的梯度范围
-            clip_grad_norm_(netD.parameters(), max_grad_norm)
-            optimizerD.step()
-
-            train_bar.set_description(
-                f'Epoch {epoch + 1}, D(z): {real_out.item():.4f} ,D(G(z)): {fake_out.item():.4f} ,D Loss: {d_loss.item():.4f}')
-    """
-    # 进入真正的GAN网络的训练循环中
+ 
     for epoch in range(1, NUM_EPOCHS + 1):
         train_bar = tqdm(train_loader)
         running_results = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
@@ -121,7 +88,6 @@ if __name__ == '__main__':
             netD.zero_grad()
             real_out = netD(real_img).mean()
             fake_out = netD(fake_img).mean()
-            # d_loss = discriminator_criterion(real_out, real_label) + discriminator_criterion(fake_out, fake_label)
             d_loss = 1 - real_out + fake_out  # 希望判别器将真实图像判为真，将假的图像判为假，以最小化d_loss为目标进行反向传播
             d_loss.backward(retain_graph=True)
             optimizerD.step()
@@ -136,9 +102,6 @@ if __name__ == '__main__':
             ##
             g_loss = generator_criterion(fake_out, fake_img, real_img)
             g_loss.backward()
-
-            fake_img = netG(z)
-            fake_out = netD(fake_img).mean()
 
             optimizerG.step()
 
