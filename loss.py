@@ -16,11 +16,11 @@ class GeneratorLoss(nn.Module):
 
     def forward(self, out_labels, out_images, target_images):
         # Adversarial Loss
-        # adversarial_loss = torch.mean(1 - out_labels)  # 单纯的取计算概率的平均值，out_label越大，表明判别器认为这张图是真实图片概率越大，因此损失也就越低
+        # 单纯的取计算概率的平均值，out_label越大，表明判别器认为这张图是真实图片概率越大，因此损失也就越低
         adversarial_loss = torch.mean(-torch.log(out_labels))
         # Perception Loss
         perception_loss = self.mse_loss(self.loss_network(out_images),
-                                        self.loss_network(target_images))  # 选取VGG的前31层作为特征提取层
+                                        self.loss_network(target_images))  # 选取VGG的前36层作为特征提取层
         # Image Loss
         image_loss = self.mse_loss(out_images, target_images)
         # TV Loss
